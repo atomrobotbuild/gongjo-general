@@ -4,9 +4,71 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>공조 설비 일지</title>
+<style>
+body{font-family:sans-serif;max-width:640px;margin:0 auto;padding:12px;background:#f4f6f8}
+h1{font-size:1.4em}
+section{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
+label{display:block;margin-top:8px;font-size:.9em;color:#444}
+input,textarea{width:100%;box-sizing:border-box;padding:8px;font-size:1em;border:1px solid #bbb;border-radius:4px}
+button{margin-top:10px;padding:10px 16px;font-size:1em;border:0;border-radius:4px;background:#1565c0;color:#fff}
+button.del{background:#c62828;padding:4px 10px;font-size:.8em;margin:0}
+.rec{border-top:1px solid #ddd;padding:8px 0}
+.rec b{color:#1565c0}
+</style>
 </head>
 <body>
 <h1>공조 설비 일지</h1>
-<p>건물 공조장치의 일반 사항, 운용 중 나타난 문제의 관찰과 대응을 기록합니다.</p>
+
+<section>
+<h2>설비 일반 내용</h2>
+<textarea id="general" rows="5" placeholder="예) AHU-01: 1층 사무실 담당, 냉온수 코일, 전열 휠 있음"></textarea>
+<button onclick="saveGeneral()">일반 내용 저장</button>
+</section>
+
+<section>
+<h2>관찰 · 대응 기록</h2>
+<label>날짜</label><input type="date" id="date">
+<label>설비 명칭</label><input id="equip" placeholder="예) AHU-02">
+<label>관찰한 문제 (증상)</label><textarea id="symptom" rows="3"></textarea>
+<label>측정값 / 상태</label><input id="value" placeholder="예) 급기온도 24도, 설정 20도">
+<label>원인 추정</label><textarea id="cause" rows="2"></textarea>
+<label>대응 (조치 내용)</label><textarea id="action" rows="3"></textarea>
+<label>결과 / 후속 확인</label><textarea id="result" rows="2"></textarea>
+<button onclick="addRec()">기록 저장</button>
+</section>
+
+<section>
+<h2>기록 목록</h2>
+<div id="list"></div>
+</section>
+
+<script>
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("저장 실패")}}
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
+function saveGeneral(){save("general",document.getElementById("general").value);alert("저장했습니다")}
+function addRec(){
+  var f=["date","equip","symptom","value","cause","action","result"],r={};
+  f.forEach(function(k){r[k]=document.getElementById(k).value});
+  if(!r.equip&&!r.symptom){alert("설비 명칭이나 증상을 입력하세요");return}
+  var a=load("records",[]);a.unshift(r);save("records",a);
+  f.forEach(function(k){document.getElementById(k).value=""});
+  show();
+}
+function del(i){if(!confirm("삭제할까요?"))return;var a=load("records",[]);a.splice(i,1);save("records",a);show()}
+function show(){
+  var a=load("records",[]),h="";
+  a.forEach(function(r,i){
+    h+='<div class="rec"><b>'+esc(r.date)+' '+esc(r.equip)+'</b><br>'
+    +'증상: '+esc(r.symptom)+'<br>측정: '+esc(r.value)+'<br>원인: '+esc(r.cause)
+    +'<br>대응: '+esc(r.action)+'<br>결과: '+esc(r.result)
+    +'<br><button class="del" onclick="del('+i+')">삭제</button></div>';
+  });
+  document.getElementById("list").innerHTML=h||"아직 기록이 없습니다.";
+}
+document.getElementById("general").value=load("general","");
+document.getElementById("date").value=new Date().toISOString().slice(0,10);
+show();
+</script>
 </body>
 </html>
