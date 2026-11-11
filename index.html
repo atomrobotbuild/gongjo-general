@@ -10,10 +10,16 @@ h1{font-size:1.4em}
 section{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
 label{display:block;margin-top:8px;font-size:.9em;color:#444}
 input,textarea{width:100%;box-sizing:border-box;padding:8px;font-size:1em;border:1px solid #bbb;border-radius:4px}
-button{margin-top:10px;padding:10px 16px;font-size:1em;border:0;border-radius:4px;background:#1565c0;color:#fff}
+button{margin-top:10px;padding:10px 14px;font-size:1em;border:0;border-radius:4px;background:#1565c0;color:#fff}
+button.sub{background:#2e7d32}
+button.vid{background:#6a1b9a}
 button.del{background:#c62828;padding:4px 10px;font-size:.8em;margin:0}
 .rec{border-top:1px solid #ddd;padding:8px 0}
 .rec b{color:#1565c0}
+.imgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.imgs div{width:48%}
+.imgs img,.imgs video{width:100%;border-radius:6px;background:#000}
+.imgs small{display:block;margin:2px 0}
 </style>
 </head>
 <body>
@@ -23,6 +29,19 @@ button.del{background:#c62828;padding:4px 10px;font-size:.8em;margin:0}
 <h2>설비 일반 내용</h2>
 <textarea id="general" rows="5" placeholder="예) AHU-01: 1층 사무실 담당, 냉온수 코일, 전열 휠 있음"></textarea>
 <button onclick="saveGeneral()">일반 내용 저장</button>
+</section>
+
+<section>
+<h2>설비 이미지 · 동영상</h2>
+<label>설명 (선택)</label>
+<input id="cap" placeholder="예) AHU-01 외관, 팬 이상 소음">
+<button onclick="document.getElementById('camP').click()">사진 촬영</button>
+<button class="vid" onclick="document.getElementById('camV').click()">동영상 촬영</button>
+<button class="sub" onclick="document.getElementById('gal').click()">앨범에서 불러오기</button>
+<input type="file" id="camP" accept="image/*" capture="environment" hidden onchange="addMedia(this)">
+<input type="file" id="camV" accept="video/*" capture="environment" hidden onchange="addMedia(this)">
+<input type="file" id="gal" accept="image/*,video/*" hidden onchange="addMedia(this)">
+<div class="imgs" id="imgs"></div>
 </section>
 
 <section>
@@ -44,15 +63,99 @@ button.del{background:#c62828;padding:4px 10px;font-size:.8em;margin:0}
 
 <script>
 function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert("저장 실패")}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){alert("저장 공간이 부족합니다.");return false}}
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
-function saveGeneral(){save("general",document.getElementById("general").value);alert("저장했습니다")}
+function today(){return new Date().toISOString().slice(0,10)}
+function saveGeneral(){if(save("general",document.getElementById("general").value))alert("저장했습니다")}
+
+/* ---- 사진/동영상: IndexedDB ---- */
+var db=null,urls=[];
+function openDB(cb){
+  try{
+    var rq=indexedDB.open("gongjo-db",1);
+    rq.onupgradeneeded=function(){rq.result.createObjectStore("media",{keyPath:"id",autoIncrement:true})};
+    rq.onsuccess=function(){db=rq.result;cb()};
+    rq.onerror=function(){alert("사진 저장소를 열 수 없습니다");cb()};
+  }catch(e){alert("이 브라우저에서는 사진 저장을 쓸 수 없습니다");cb()}
+}
+function putMedia(rec,done){
+  if(!db){alert("저장소를 사용할 수 없습니다");return}
+  var tx=db.transaction("media","readwrite");
+  tx.objectStore("media").add(rec);
+  tx.oncomplete=done;
+  tx.onerror=function(){alert("저장 실패: 저장 공간이 부족할 수 있습니다")};
+}
+function addMedia(inp){
+  var f=inp.files[0];if(!f)return;
+  var cap=document.getElementById("cap").value,date=today();
+  function done(){document.getElementById("cap").value="";showMedia()}
+  if(f.type.indexOf("video")===0){
+    if(f.size>200*1024*1024&&!confirm("파일이 매우 큽니다. 그래도 저장할까요?")){inp.value="";return}
+    putMedia({blob:f,type:f.type,cap:cap,date:date},done);
+  }else{
+    var u=URL.createObjectURL(f),im=new Image();
+    im.onload=function(){
+      var s=Math.min(1,1280/Math.max(im.width,im.height));
+      var c=document.createElement("canvas");
+      c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+      c.toBlob(function(b){putMedia({blob:b,type:"image/jpeg",cap:cap,date:date},done)},"image/jpeg",0.7);
+      URL.revokeObjectURL(u);
+    };
+    im.onerror=function(){putMedia({blob:f,type:f.type,cap:cap,date:date},done)};
+    im.src=u;
+  }
+  inp.value="";
+}
+function delMedia(id){
+  if(!confirm("삭제할까요?"))return;
+  var tx=db.transaction("media","readwrite");
+  tx.objectStore("media").delete(id);
+  tx.oncomplete=showMedia;
+}
+function showMedia(){
+  var box=document.getElementById("imgs");
+  urls.forEach(function(u){URL.revokeObjectURL(u)});urls=[];
+  if(!db){box.textContent="저장소를 사용할 수 없습니다.";return}
+  var rq=db.transaction("media").objectStore("media").getAll();
+  rq.onsuccess=function(){
+    var a=rq.result.sort(function(x,y){return y.id-x.id});
+    box.innerHTML="";
+    if(!a.length){box.textContent="아직 사진이나 동영상이 없습니다.";return}
+    a.forEach(function(r){
+      var u=URL.createObjectURL(r.blob);urls.push(u);
+      var d=document.createElement("div"),m;
+      if(r.type.indexOf("video")===0){m=document.createElement("video");m.controls=true;m.preload="metadata";m.playsInline=true}
+      else{m=document.createElement("img")}
+      m.src=u;d.appendChild(m);
+      var s=document.createElement("small");s.textContent=r.date+" "+(r.cap||"");d.appendChild(s);
+      var b=document.createElement("button");b.className="del";b.textContent="삭제";
+      b.onclick=function(){delMedia(r.id)};d.appendChild(b);
+      box.appendChild(d);
+    });
+  };
+}
+function migrate(){
+  var old=load("images",[]);
+  if(!old.length||!db)return;
+  var n=old.length;
+  old.forEach(function(r){
+    fetch(r.src).then(function(x){return x.blob()}).then(function(b){
+      putMedia({blob:b,type:"image/jpeg",cap:r.cap||"",date:r.date||today()},function(){
+        if(--n===0){try{localStorage.removeItem("images")}catch(e){}showMedia()}
+      });
+    });
+  });
+}
+
+/* ---- 관찰 · 대응 기록 ---- */
 function addRec(){
   var f=["date","equip","symptom","value","cause","action","result"],r={};
   f.forEach(function(k){r[k]=document.getElementById(k).value});
   if(!r.equip&&!r.symptom){alert("설비 명칭이나 증상을 입력하세요");return}
   var a=load("records",[]);a.unshift(r);save("records",a);
   f.forEach(function(k){document.getElementById(k).value=""});
+  document.getElementById("date").value=today();
   show();
 }
 function del(i){if(!confirm("삭제할까요?"))return;var a=load("records",[]);a.splice(i,1);save("records",a);show()}
@@ -66,9 +169,12 @@ function show(){
   });
   document.getElementById("list").innerHTML=h||"아직 기록이 없습니다.";
 }
+
 document.getElementById("general").value=load("general","");
-document.getElementById("date").value=new Date().toISOString().slice(0,10);
+document.getElementById("date").value=today();
 show();
+openDB(function(){showMedia();migrate()});
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 </script>
 </body>
 </html>
