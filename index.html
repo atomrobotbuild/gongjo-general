@@ -244,4 +244,38 @@ function backup(all){
     }).catch(function(){$("bs").textContent="실패: 용량이 너무 큽니다. 설비별로 백업하세요."});
   };
 }
+</script><style>
+.bb{display:block;width:100%;text-align:left;margin-top:8px;padding:16px;font-size:1.1em;background:#fff;color:#0d47a1;border:2px solid #1565c0}
+.bb.bk{background:#546e7a;color:#fff;border-color:#546e7a}
+</style>
+<script>
+(function(){
+var nav=document.createElement("div"),main=document.createElement("div"),cat="",c1=$("c1");
+c1.parentNode.insertBefore(nav,c1);
+c1.style.display="none";$("c2").style.display="none";
+main.appendChild(document.querySelector(".tabs"));
+["p1","p2","p3"].forEach(function(i){main.appendChild($(i))});
+nav.parentNode.insertBefore(main,nav.nextSibling);
+function mk(t,f,c){var b=document.createElement("button");b.className="bb "+(c||"");b.textContent=t;b.onclick=f;nav.appendChild(b)}
+function hd(t,cur){var h=document.createElement("div");h.textContent=t;h.style.cssText=cur?"background:#1565c0;color:#fff;padding:10px;border-radius:6px;margin-top:8px":"margin-top:10px;font-weight:bold";nav.appendChild(h)}
+function go(k,i){c1.value=k;c1.onchange();$("c2").value=String(i);pick();tab(1);R();window.scrollTo(0,0)}
+function R(){
+  nav.innerHTML="";
+  if(eq){
+    hd(eq,1);
+    mk("설비 바꾸기",function(){c1.value="";c1.onchange();cat="";R()},"bk");
+    main.style.display="block";
+  }else if(!cat){
+    hd("1단계: 분류를 누르세요 (v7)");
+    Object.keys(D).forEach(function(k){mk(k,function(){cat=k;R()})});
+    main.style.display="none";
+  }else{
+    hd(cat+" - 설비를 누르세요");
+    D[cat].forEach(function(x,i){mk(x[0],function(){go(cat,i)})});
+    mk("← 분류로 돌아가기",function(){cat="";R()},"bk");
+    main.style.display="none";
+  }
+}
+R();
+})();
 </script></body></html>
