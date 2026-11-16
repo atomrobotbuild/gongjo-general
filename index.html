@@ -2,6 +2,7 @@
 <html lang="ko"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>공조 설비 일지</title>
+<script>window.onerror=function(m,s,l){var e=document.getElementById("er");if(e)e.textContent="오류: "+m+" (줄 "+l+")"}</script>
 <style>
 body{font-family:sans-serif;max-width:640px;margin:0 auto;padding:12px;background:#f4f6f8}
 select,input,textarea{width:100%;box-sizing:border-box;padding:9px;font-size:1em;margin-top:8px;border:1px solid #bbb;border-radius:4px}
@@ -12,8 +13,9 @@ pre{white-space:pre-wrap;font-family:inherit;line-height:1.6;margin:0}
 .g{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.g div{width:48%}.g img,.g video{width:100%;background:#000}
 .d{background:#c62828;padding:3px 10px;font-size:.8em;margin:0}
 </style></head><body>
+<div id="er" style="color:#c62828"></div>
 <h2>공조 설비 일지</h2>
-<select id="c1"></select>
+<select id="c1"><option value="">1단계: 분류 선택</option></select>
 <select id="c2"><option value="">2단계: 설비 선택</option></select>
 <div class="tabs"><button id="t1" class="on" onclick="tab(1)">이미지</button><button id="t2" onclick="tab(2)">스펙</button><button id="t3" onclick="tab(3)">기록</button></div>
 
@@ -36,6 +38,14 @@ pre{white-space:pre-wrap;font-family:inherit;line-height:1.6;margin:0}
 <textarea id="ac" rows="3" placeholder="대응 (원인, 조치, 결과)"></textarea>
 <button onclick="saveRec()">기록 저장</button>
 <div id="rl"></div>
+</div>
+
+<div class="p" style="display:block;margin-top:12px">
+<b>백업</b><br>
+<button onclick="backup(false)">선택한 설비만 백업</button>
+<button style="background:#2e7d32" onclick="backup(true)">전체 백업</button>
+<div id="bs" style="margin-top:6px;font-size:.9em"></div>
+<small>압축 파일 안에 설비별 폴더(사진·동영상·기록·스펙)가 만들어집니다.</small>
 </div>
 
 <script>
@@ -119,9 +129,11 @@ function pick(){var c=$("c1").value,i=$("c2").value;eq=(c&&i!=="")?c+" > "+D[c][
 function tab(n){[1,2,3].forEach(function(i){$("p"+i).style.display=i==n?"block":"none";$("t"+i).className=i==n?"on":""})}
 $("dt").value=new Date().toISOString().slice(0,10);
 
-var rq=indexedDB.open("gongjo-db",1);
-rq.onupgradeneeded=function(){rq.result.createObjectStore("media",{keyPath:"id",autoIncrement:true})};
-rq.onsuccess=function(){db=rq.result;media()};
+try{
+  var rq=indexedDB.open("gongjo-db",1);
+  rq.onupgradeneeded=function(){rq.result.createObjectStore("media",{keyPath:"id",autoIncrement:true})};
+  rq.onsuccess=function(){db=rq.result;media()};
+}catch(e){}
 function put(r,cb){var t=db.transaction("media","readwrite");t.objectStore("media").add(r);t.oncomplete=cb;t.onerror=function(){alert("저장 실패 (공간 부족 가능)")}}
 function add(inp){
   var f=inp.files[0];inp.value="";if(!f)return;
@@ -177,5 +189,59 @@ function recs(){
     x.onclick=function(){if(confirm("삭제할까요?")){a.splice(i,1);localStorage.setItem("rec:"+eq,JSON.stringify(a));recs()}};
     d.appendChild(x);b.appendChild(d);
   });
+}
+
+var CT=[];(function(){for(var n=0,c,k;n<256;n++){c=n;for(k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;CT[n]=c>>>0}})();
+function crc(u){var c=0xFFFFFFFF;for(var i=0;i<u.length;i++)c=CT[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function zip(files){
+  var enc=new TextEncoder(),parts=[],cd=[],off=0,cs=0;
+  files.forEach(function(f){
+    var n=enc.encode(f.name),c=crc(f.data),L=f.data.length;
+    var h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);
+    h.setUint32(14,c,true);h.setUint32(18,L,true);h.setUint32(22,L,true);h.setUint16(26,n.length,true);
+    parts.push(h.buffer,n,f.data);
+    var g=new DataView(new ArrayBuffer(46));
+    g.setUint32(0,0x02014b50,true);g.setUint16(4,20,true);g.setUint16(6,20,true);g.setUint16(8,0x0800,true);g.setUint16(14,0x21,true);
+    g.setUint32(16,c,true);g.setUint32(20,L,true);g.setUint32(24,L,true);g.setUint16(28,n.length,true);g.setUint32(42,off,true);
+    cd.push(g.buffer,n);cs+=46+n.length;off+=30+n.length+L;
+  });
+  var e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+  return new Blob(parts.concat(cd,[e.buffer]),{type:"application/zip"});
+}
+function cl(s){return String(s).replace(/[\\\/:*?"<>|\r\n]/g,"_").slice(0,30)}
+function pth(e){return e.split(" > ").map(cl).join("/")}
+function specOf(e){var p=e.split(" > "),a=D[p[0]]||[];for(var i=0;i<a.length;i++)if(a[i][0]==p[1])return p[1]+"\n"+a[i][1];return ""}
+function backup(all){
+  if(!db){alert("저장소를 열 수 없습니다");return}
+  if(!all&&!eq){alert("1단계와 2단계 설비를 먼저 선택하세요");return}
+  $("bs").textContent="준비 중...";
+  var q=db.transaction("media").objectStore("media").getAll();
+  q.onsuccess=function(){
+    var m=q.result.filter(function(r){return all||r.eq==eq}).sort(function(x,y){return x.id-y.id}),set={},tot=0;
+    m.forEach(function(r){set[r.eq]=1;tot+=r.blob.size});
+    if(all){for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf("rec:")===0)set[k.slice(4)]=1}}
+    else set[eq]=1;
+    if(tot>500*1024*1024&&!confirm("용량이 큽니다(약 "+Math.round(tot/1048576)+"MB). 설비별로 나눠 백업하는 것을 권합니다. 계속할까요?")){$("bs").textContent="";return}
+    Promise.all(m.map(function(r){return r.blob.arrayBuffer()})).then(function(bufs){
+      var files=[],enc=new TextEncoder(),cnt={};
+      m.forEach(function(r,i){
+        cnt[r.eq]=(cnt[r.eq]||0)+1;
+        var ext=r.type=="image/jpeg"?"jpg":(r.type.split("/")[1]||"bin").replace("quicktime","mov");
+        files.push({name:pth(r.eq)+"/"+r.date+"_"+String(cnt[r.eq]).padStart(2,"0")+(r.cap?"_"+cl(r.cap):"")+"."+ext,data:new Uint8Array(bufs[i])});
+      });
+      Object.keys(set).forEach(function(e){
+        var p=pth(e),t=ls("rec:"+e).map(function(r){return r.d+"\n증상: "+r.s+"\n대응: "+r.a}).join("\n\n");
+        files.push({name:p+"/기록.txt",data:enc.encode(t||"(기록 없음)")});
+        var sp=specOf(e);if(sp)files.push({name:p+"/스펙.txt",data:enc.encode(sp)});
+      });
+      var a=document.createElement("a");
+      a.href=URL.createObjectURL(zip(files));
+      a.download="공조설비일지_백업_"+new Date().toISOString().slice(0,10)+".zip";
+      document.body.appendChild(a);a.click();a.remove();
+      $("bs").textContent="완료: 파일 "+files.length+"개";
+    }).catch(function(){$("bs").textContent="실패: 용량이 너무 큽니다. 설비별로 백업하세요."});
+  };
 }
 </script></body></html>
