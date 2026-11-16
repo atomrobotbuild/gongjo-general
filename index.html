@@ -1,180 +1,181 @@
 <!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="ko"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>공조 설비 일지</title>
 <style>
 body{font-family:sans-serif;max-width:640px;margin:0 auto;padding:12px;background:#f4f6f8}
-h1{font-size:1.4em}
-section{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px}
-label{display:block;margin-top:8px;font-size:.9em;color:#444}
-input,textarea{width:100%;box-sizing:border-box;padding:8px;font-size:1em;border:1px solid #bbb;border-radius:4px}
-button{margin-top:10px;padding:10px 14px;font-size:1em;border:0;border-radius:4px;background:#1565c0;color:#fff}
-button.sub{background:#2e7d32}
-button.vid{background:#6a1b9a}
-button.del{background:#c62828;padding:4px 10px;font-size:.8em;margin:0}
-.rec{border-top:1px solid #ddd;padding:8px 0}
-.rec b{color:#1565c0}
-.imgs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.imgs div{width:48%}
-.imgs img,.imgs video{width:100%;border-radius:6px;background:#000}
-.imgs small{display:block;margin:2px 0}
-</style>
-</head>
-<body>
-<h1>공조 설비 일지</h1>
+select,input,textarea{width:100%;box-sizing:border-box;padding:9px;font-size:1em;margin-top:8px;border:1px solid #bbb;border-radius:4px}
+button{margin-top:8px;padding:10px 12px;font-size:1em;border:0;border-radius:4px;background:#1565c0;color:#fff}
+.tabs{display:flex;margin-top:10px}.tabs button{flex:1;margin:0;border-radius:0;background:#90a4ae}.tabs button.on{background:#1565c0}
+.p{background:#fff;padding:10px;display:none}
+pre{white-space:pre-wrap;font-family:inherit;line-height:1.6;margin:0}
+.g{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.g div{width:48%}.g img,.g video{width:100%;background:#000}
+.d{background:#c62828;padding:3px 10px;font-size:.8em;margin:0}
+</style></head><body>
+<h2>공조 설비 일지</h2>
+<select id="c1"></select>
+<select id="c2"><option value="">2단계: 설비 선택</option></select>
+<div class="tabs"><button id="t1" class="on" onclick="tab(1)">이미지</button><button id="t2" onclick="tab(2)">스펙</button><button id="t3" onclick="tab(3)">기록</button></div>
 
-<section>
-<h2>설비 일반 내용</h2>
-<textarea id="general" rows="5" placeholder="예) AHU-01: 1층 사무실 담당, 냉온수 코일, 전열 휠 있음"></textarea>
-<button onclick="saveGeneral()">일반 내용 저장</button>
-</section>
+<div class="p" id="p1" style="display:block">
+<input id="cap" placeholder="사진 설명 (선택) 예) 팬 소음, 계기판">
+<button onclick="$('cp').click()">사진 촬영</button>
+<button style="background:#6a1b9a" onclick="$('cv').click()">동영상 촬영</button>
+<button style="background:#2e7d32" onclick="$('ga').click()">앨범</button>
+<input type="file" id="cp" accept="image/*" capture="environment" hidden onchange="add(this)">
+<input type="file" id="cv" accept="video/*" capture="environment" hidden onchange="add(this)">
+<input type="file" id="ga" accept="image/*,video/*" hidden onchange="add(this)">
+<div class="g" id="g"></div>
+</div>
 
-<section>
-<h2>설비 이미지 · 동영상</h2>
-<label>설명 (선택)</label>
-<input id="cap" placeholder="예) AHU-01 외관, 팬 이상 소음">
-<button onclick="document.getElementById('camP').click()">사진 촬영</button>
-<button class="vid" onclick="document.getElementById('camV').click()">동영상 촬영</button>
-<button class="sub" onclick="document.getElementById('gal').click()">앨범에서 불러오기</button>
-<input type="file" id="camP" accept="image/*" capture="environment" hidden onchange="addMedia(this)">
-<input type="file" id="camV" accept="video/*" capture="environment" hidden onchange="addMedia(this)">
-<input type="file" id="gal" accept="image/*,video/*" hidden onchange="addMedia(this)">
-<div class="imgs" id="imgs"></div>
-</section>
+<div class="p" id="p2"><pre id="spec">1단계와 2단계를 먼저 선택하세요.</pre></div>
 
-<section>
-<h2>관찰 · 대응 기록</h2>
-<label>날짜</label><input type="date" id="date">
-<label>설비 명칭</label><input id="equip" placeholder="예) AHU-02">
-<label>관찰한 문제 (증상)</label><textarea id="symptom" rows="3"></textarea>
-<label>측정값 / 상태</label><input id="value" placeholder="예) 급기온도 24도, 설정 20도">
-<label>원인 추정</label><textarea id="cause" rows="2"></textarea>
-<label>대응 (조치 내용)</label><textarea id="action" rows="3"></textarea>
-<label>결과 / 후속 확인</label><textarea id="result" rows="2"></textarea>
-<button onclick="addRec()">기록 저장</button>
-</section>
-
-<section>
-<h2>기록 목록</h2>
-<div id="list"></div>
-</section>
+<div class="p" id="p3">
+<input type="date" id="dt">
+<textarea id="sy" rows="3" placeholder="관찰한 문제 (증상, 측정값)"></textarea>
+<textarea id="ac" rows="3" placeholder="대응 (원인, 조치, 결과)"></textarea>
+<button onclick="saveRec()">기록 저장</button>
+<div id="rl"></div>
+</div>
 
 <script>
-function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
-function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){alert("저장 공간이 부족합니다.");return false}}
-function esc(s){return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]})}
-function today(){return new Date().toISOString().slice(0,10)}
-function saveGeneral(){if(save("general",document.getElementById("general").value))alert("저장했습니다")}
+var $=function(i){return document.getElementById(i)};
+var A="\n전열휠 내장, MERV14 이상 필터, 코일 동파방지";
+var D={
+"공기조화기":[
+["AHU-1 (B1F~1F)","기계실\n급기 12,000㎥/h 1,177Pa 6.0kW\n환기 9,810㎥/h 517Pa 3.4kW\n냉방 82kW 15-6℃ 130LPM\n난방 70kW 50-60℃ 101LPM\n가습 8kg/h"+A],
+["AHU-2 (2F~4F)","기계실\n급기 27,900㎥/h 1,260Pa 5.0kW×4\n환기 23,500㎥/h 623Pa 3.4kW×2\n냉방 192kW 306LPM\n난방 104kW 149LPM\n가습 26kg/h"+A],
+["AHU-3 (5F~7F)","공조실\n급기 28,300㎥/h 1,260Pa 5.0kW×4\n환기 23,850㎥/h 544Pa 3.4kW×2\n냉방 198kW 315LPM\n난방 110kW 157LPM\n가습 26kg/h"+A]],
+"전열교환 환기장치":[
+["전열교환기 (3대)","풍량 250CMH\n소비전력 129/97/41W (강/중/약)\n676×636×315mm, 25kg\n1φ220V 60Hz, DUCT Ø150"]],
+"펌프":[
+["부스터 급수펌프","B1F 기계실 1SET\n200LPM×3 58m 3.7kW×3 인버터"],
+["조경용수 펌프","B1F 기계실 1대\n100LPM 60m 2.2kW"],
+["냉온수 순환펌프","B1F 기계실 3대(1대 예비)\n550LPM 24m 4kW"],
+["급탕열원 1차 순환","2대(1대 예비)\n240LPM 17m 2.2kW"],
+["급탕열원 2차 순환","2대(1대 예비)\n83LPM 7m 0.75kW"],
+["급탕순환펌프","2대\n9LPM 5m 0.75kW"],
+["집수정 배수펌프 (기계실)","수중형 2대 순차·교번\n300LPM 16m 2.2kW"],
+["집수정 배수펌프 (주차장)","수중형 3대 순차·교번\n300LPM 16m 2.2kW"],
+["영구배수용 펌프","수중형 2대\n300LPM 16m 2.2kW"],
+["PIT 배수용 펌프","화장실 PIT 2대\n100LPM 9m 0.75kW"],
+["일반 배수 패키지","PIT 1SET 80LPM 10m 3kW×2"],
+["일반 오수 패키지","PIT 1SET 80LPM 10m 3kW×2"]],
+"송풍기":[
+["기계실 급기팬","1대 13,600CMH 24mmAq 2.25kW"],
+["전기실 급기팬","1대 7,600CMH 19mmAq 1.5kW"],
+["발전기실 급기팬","1대 3,400CMH 18mmAq 0.75kW"],
+["기계실 배기팬","1대 13,600CMH 24mmAq 2.25kW"],
+["전기실 배기팬","1대 7,600CMH 23mmAq 1.5kW"],
+["발전기실 배기팬","1대 3,400CMH 20mmAq 0.75kW"],
+["화장실 배기팬 (지붕층)","SIROCCO 1대 13,500CMH 33mmAq 3.75kW"],
+["재활용보관소 배기팬","WALL형 700CMH 50W 1φ220V"],
+["샤워실 배기팬","천정형 각층 150CMH 60W 1φ220V"],
+["지하주차장 배기 (FLAP FAN)","1대 30,000CMH 15mmAq 7.5kW"],
+["주차장 기류유인팬","6대 3,900CMH 0.37kW 1φ220V"]],
+"탱크류":[
+["위생용 저수조","54톤 3,000×3,000×6,000mm SMC, 우레탄 25T"],
+["냉난방용 팽창탱크","밀폐형 0.8톤 Ø609 H1,144 SS400"],
+["급탕용 팽창탱크","밀폐형 2대 0.1톤 Ø762 H2,109 SS400"],
+["급탕탱크","입형 2톤 Ø1,200 H1,500 STS"]],
+"항온항습기":[
+["실내기 (지상2층 서버실)","7대 냉방 60,480kcal/h 난방 20kW 가습 13L/h\n압축기 SCROLL 10.85kW×2, EC 송풍기 3kW×2\n냉매 R-407C, 3φ380V 정격 54.30kW\n급수 15A 배수 25A"],
+["실외기 (지상1층)","14대 PROPELLER FAN 0.4kW×4 600CMM 3φ380V"]],
+"팬코일유니트":[
+["FCU-1 (1WAY)","4대 냉방 1,300 난방 2,540kcal/h 5.6CMM 30W\n지하1층 용역원실, 지상1층 관리사무소·샤워실·탈의실(남)"],
+["FCU-2 (1WAY)","4대 냉방 2,060 난방 3,630kcal/h 9.0CMM 42W\n지상1층 샤워실·탈의실(여), 3층 소회의실 #01·#02, 4층 #03"],
+["FCU-3 (4WAY)","26대 냉방 3,060 난방 6,350kcal/h 15.0CMM 45W\n지상2층 공용공간, 3층 코워킹, 4층 휴게실, 5~7층 연구기관"],
+["FCU-4 (4WAY)","3대 냉방 3,850 난방 6,820kcal/h 18.0CMM 65W\n지상4층 코워킹스페이스, 중회의실_01"],
+["FCU-5 (4WAY)","3대 냉방 5,450 난방 10,300kcal/h 23.5CMM 96W\n지상7층 연구기관_03"],
+["FCU-6 (고정압)","2대 냉방 5,190 난방 8,610kcal/h 18.3CMM 300W 정압 10mmAq\n지상6층 개방형 업무공간 상부"],
+["FCU-7 (고정압)","3대 냉방 6,200 난방 10,110kcal/h 22.0CMM 340W 정압 10mmAq\n지상5층 개방형 업무공간 상부"]],
+"전기온수기·복사난방":[
+["전기온수기 EWH-1","12대 15L 2.5kW 360×300×360mm 9.2kg 화장실 급탕용"],
+["전기온수기 EWH-2","20대 30L 2.5kW 446×446×360mm 14.2kg 화장실·오픈키친"],
+["복사난방판넬 ER-1","4대 430kcal/h 500W 598×298×30mm 2.5kg B1·1F 화장실"],
+["복사난방판넬 ER-2","2대 860kcal/h 1,000W 898×298×30mm 4.9kg 1F 화장실"]],
+"열교환기 (급탕용)":[
+["GHX-1 플레이트형","기계실 1대 49,500kcal/h\n1차 60→50℃ 240LPM, 2차 45→55℃ 83LPM\n압력손실 5.0mAq, 65A, 10kgf/㎠g\nSUS304 / NBR, 샌드위치 판넬 50t"]],
+"GHP":[
+["GHP 실내기 4Way (GHA-1~8)","무풍 4Way 카세트 합계 55대 중\nGHA-1 26대 5.2/6.0kW, -2 3대 6.0/6.8, -3 3대 7.2/8.1\n-4 2대 8.3/9.3, -5 11대 10.0/11.0, -6 3대 11.0/12.8\n-7 2대 13.0/14.5, -8 1대 14.5/16.3 (냉방/난방)\n드레인 VP25, 통신선 VCTF 0.75~1.5"],
+["GHP 실내기 1Way (GHA-9~11)","무풍 1Way 카세트\nGHA-9 2대 1.6/1.8kW, -10 1대 3.2/3.6, -11 1대 4.0/4.5\n드레인 VP20"],
+["GHP 실외기 (GOA-1~4)","냉난방겸용 R410A 합계 6대 (냉방/난방)\nGOA-1 1대 45/50kW 770kg, -2 2대 56/63kW\nGOA-3 1대 71/80kW 800kg, -4 2대 85/95kW"],
+["싱글형 PAC-1","무풍 4Way 7.2/8.6kW 1대 지하1층 방재실"],
+["싱글형 PAC-2","무풍 4Way 10.0/12.9kW 2대 지상1층 카페테리아·MDF실"],
+["싱글형 PAC-3","바닥 상치 23.0/26.0kW 1대 지하1층 전기실"],
+["싱글형 PAC-4","바닥 상치 29.0/33.0kW 2대 지하1층 전기실"]],
+"지열 설비":[
+["지열히트펌프 (W-W)","기계실 4대 냉난방용 스크롤 R-410A\n정격 냉방 160.5kW 난방 152.8kW\n소비전력 34.1/47.4kW, 1,100kg, 3φ380V 60Hz\n부하측 240LPM, 열원측 480LPM, 접속 80A"],
+["지열원 순환펌프","인라인 5대(1대 예비) 480LPM 27mH2O 5.5kW 65A"],
+["지열 팽창탱크","밀폐형 1,000L 965×1,881 10kgf/㎠g 90℃ SS400 40A"],
+["지열 공급헤더","300×3,800 STS304 고무발포 25t+AL자켓 10kgf/㎠g"],
+["지열 환수헤더","300×3,600 STS304 고무발포 25t+AL자켓 10kgf/㎠g"]]
+};
+var db,urls=[],eq="";
+$("c1").innerHTML='<option value="">1단계: 분류 선택</option>'+Object.keys(D).map(function(k){return '<option>'+k+'</option>'}).join("");
+$("c1").onchange=function(){var a=D[this.value]||[];$("c2").innerHTML='<option value="">2단계: 설비 선택</option>'+a.map(function(x,i){return '<option value="'+i+'">'+x[0]+'</option>'}).join("");pick()};
+$("c2").onchange=pick;
+function pick(){var c=$("c1").value,i=$("c2").value;eq=(c&&i!=="")?c+" > "+D[c][i][0]:"";$("spec").textContent=eq?D[c][i][1]:"1단계와 2단계를 먼저 선택하세요.";media();recs()}
+function tab(n){[1,2,3].forEach(function(i){$("p"+i).style.display=i==n?"block":"none";$("t"+i).className=i==n?"on":""})}
+$("dt").value=new Date().toISOString().slice(0,10);
 
-/* ---- 사진/동영상: IndexedDB ---- */
-var db=null,urls=[];
-function openDB(cb){
-  try{
-    var rq=indexedDB.open("gongjo-db",1);
-    rq.onupgradeneeded=function(){rq.result.createObjectStore("media",{keyPath:"id",autoIncrement:true})};
-    rq.onsuccess=function(){db=rq.result;cb()};
-    rq.onerror=function(){alert("사진 저장소를 열 수 없습니다");cb()};
-  }catch(e){alert("이 브라우저에서는 사진 저장을 쓸 수 없습니다");cb()}
+var rq=indexedDB.open("gongjo-db",1);
+rq.onupgradeneeded=function(){rq.result.createObjectStore("media",{keyPath:"id",autoIncrement:true})};
+rq.onsuccess=function(){db=rq.result;media()};
+function put(r,cb){var t=db.transaction("media","readwrite");t.objectStore("media").add(r);t.oncomplete=cb;t.onerror=function(){alert("저장 실패 (공간 부족 가능)")}}
+function add(inp){
+  var f=inp.files[0];inp.value="";if(!f)return;
+  if(!eq){alert("1단계와 2단계 설비를 먼저 선택하세요");return}
+  var r={eq:eq,cap:$("cap").value,date:new Date().toISOString().slice(0,10)};
+  function ok(){$("cap").value="";media()}
+  function raw(){r.blob=f;r.type=f.type;put(r,ok)}
+  if(f.type.indexOf("video")===0){raw();return}
+  var u=URL.createObjectURL(f),im=new Image();
+  im.onload=function(){
+    var s=Math.min(1,1280/Math.max(im.width,im.height)),cv=document.createElement("canvas");
+    cv.width=im.width*s;cv.height=im.height*s;cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);
+    cv.toBlob(function(b){r.blob=b;r.type="image/jpeg";put(r,ok)},"image/jpeg",.7);URL.revokeObjectURL(u);
+  };
+  im.onerror=raw;im.src=u;
 }
-function putMedia(rec,done){
-  if(!db){alert("저장소를 사용할 수 없습니다");return}
-  var tx=db.transaction("media","readwrite");
-  tx.objectStore("media").add(rec);
-  tx.oncomplete=done;
-  tx.onerror=function(){alert("저장 실패: 저장 공간이 부족할 수 있습니다")};
-}
-function addMedia(inp){
-  var f=inp.files[0];if(!f)return;
-  var cap=document.getElementById("cap").value,date=today();
-  function done(){document.getElementById("cap").value="";showMedia()}
-  if(f.type.indexOf("video")===0){
-    if(f.size>200*1024*1024&&!confirm("파일이 매우 큽니다. 그래도 저장할까요?")){inp.value="";return}
-    putMedia({blob:f,type:f.type,cap:cap,date:date},done);
-  }else{
-    var u=URL.createObjectURL(f),im=new Image();
-    im.onload=function(){
-      var s=Math.min(1,1280/Math.max(im.width,im.height));
-      var c=document.createElement("canvas");
-      c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
-      c.getContext("2d").drawImage(im,0,0,c.width,c.height);
-      c.toBlob(function(b){putMedia({blob:b,type:"image/jpeg",cap:cap,date:date},done)},"image/jpeg",0.7);
-      URL.revokeObjectURL(u);
-    };
-    im.onerror=function(){putMedia({blob:f,type:f.type,cap:cap,date:date},done)};
-    im.src=u;
-  }
-  inp.value="";
-}
-function delMedia(id){
-  if(!confirm("삭제할까요?"))return;
-  var tx=db.transaction("media","readwrite");
-  tx.objectStore("media").delete(id);
-  tx.oncomplete=showMedia;
-}
-function showMedia(){
-  var box=document.getElementById("imgs");
+function media(){
   urls.forEach(function(u){URL.revokeObjectURL(u)});urls=[];
-  if(!db){box.textContent="저장소를 사용할 수 없습니다.";return}
-  var rq=db.transaction("media").objectStore("media").getAll();
-  rq.onsuccess=function(){
-    var a=rq.result.sort(function(x,y){return y.id-x.id});
-    box.innerHTML="";
-    if(!a.length){box.textContent="아직 사진이나 동영상이 없습니다.";return}
+  var b=$("g");b.innerHTML="";
+  if(!eq){b.textContent="설비를 선택하세요.";return}
+  if(!db)return;
+  var q=db.transaction("media").objectStore("media").getAll();
+  q.onsuccess=function(){
+    var a=q.result.filter(function(r){return r.eq==eq}).sort(function(x,y){return y.id-x.id});
+    if(!a.length){b.textContent="이 설비의 사진·동영상이 없습니다.";return}
     a.forEach(function(r){
       var u=URL.createObjectURL(r.blob);urls.push(u);
-      var d=document.createElement("div"),m;
-      if(r.type.indexOf("video")===0){m=document.createElement("video");m.controls=true;m.preload="metadata";m.playsInline=true}
-      else{m=document.createElement("img")}
+      var d=document.createElement("div"),v=r.type.indexOf("video")===0,m=document.createElement(v?"video":"img");
+      if(v){m.controls=true;m.preload="metadata";m.playsInline=true}
       m.src=u;d.appendChild(m);
-      var s=document.createElement("small");s.textContent=r.date+" "+(r.cap||"");d.appendChild(s);
-      var b=document.createElement("button");b.className="del";b.textContent="삭제";
-      b.onclick=function(){delMedia(r.id)};d.appendChild(b);
-      box.appendChild(d);
+      var s=document.createElement("small");s.textContent=r.date+" "+r.cap;d.appendChild(s);
+      var x=document.createElement("button");x.className="d";x.textContent="삭제";
+      x.onclick=function(){if(confirm("삭제할까요?")){var t=db.transaction("media","readwrite");t.objectStore("media").delete(r.id);t.oncomplete=media}};
+      d.appendChild(x);b.appendChild(d);
     });
   };
 }
-function migrate(){
-  var old=load("images",[]);
-  if(!old.length||!db)return;
-  var n=old.length;
-  old.forEach(function(r){
-    fetch(r.src).then(function(x){return x.blob()}).then(function(b){
-      putMedia({blob:b,type:"image/jpeg",cap:r.cap||"",date:r.date||today()},function(){
-        if(--n===0){try{localStorage.removeItem("images")}catch(e){}showMedia()}
-      });
-    });
-  });
+function ls(k){try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return []}}
+function saveRec(){
+  if(!eq){alert("설비를 먼저 선택하세요");return}
+  if(!$("sy").value&&!$("ac").value)return;
+  var a=ls("rec:"+eq);a.unshift({d:$("dt").value,s:$("sy").value,a:$("ac").value});
+  try{localStorage.setItem("rec:"+eq,JSON.stringify(a))}catch(e){alert("저장 실패")}
+  $("sy").value="";$("ac").value="";recs();
 }
-  
-/* ---- 관찰 · 대응 기록 ---- */
-function addRec(){
-  var f=["date","equip","symptom","value","cause","action","result"],r={};
-  f.forEach(function(k){r[k]=document.getElementById(k).value});
-  if(!r.equip&&!r.symptom){alert("설비 명칭이나 증상을 입력하세요");return}
-  var a=load("records",[]);a.unshift(r);save("records",a);
-  f.forEach(function(k){document.getElementById(k).value=""});
-  document.getElementById("date").value=today();
-  show();
-}
-function del(i){if(!confirm("삭제할까요?"))return;var a=load("records",[]);a.splice(i,1);save("records",a);show()}
-function show(){
-  var a=load("records",[]),h="";
+function recs(){
+  var b=$("rl");b.innerHTML="";if(!eq)return;
+  var a=ls("rec:"+eq);
   a.forEach(function(r,i){
-    h+='<div class="rec"><b>'+esc(r.date)+' '+esc(r.equip)+'</b><br>'
-    +'증상: '+esc(r.symptom)+'<br>측정: '+esc(r.value)+'<br>원인: '+esc(r.cause)
-    +'<br>대응: '+esc(r.action)+'<br>결과: '+esc(r.result)
-    +'<br><button class="del" onclick="del('+i+')">삭제</button></div>';
+    var d=document.createElement("div");d.style.cssText="border-top:1px solid #ddd;padding:6px 0;white-space:pre-wrap";
+    d.textContent=r.d+"\n증상: "+r.s+"\n대응: "+r.a+"\n";
+    var x=document.createElement("button");x.className="d";x.textContent="삭제";
+    x.onclick=function(){if(confirm("삭제할까요?")){a.splice(i,1);localStorage.setItem("rec:"+eq,JSON.stringify(a));recs()}};
+    d.appendChild(x);b.appendChild(d);
   });
-  document.getElementById("list").innerHTML=h||"아직 기록이 없습니다.";
 }
-
-document.getElementById("general").value=load("general","");
-document.getElementById("date").value=today();
-show();
-openDB(function(){showMedia();migrate()});
-try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
-</script>
-</body>
-</html>
+</script></body></html>
