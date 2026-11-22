@@ -278,4 +278,59 @@ function R(){
 }
 R();
 })();
-</script></body></html>
+</script>
+  <div class="p" style="display:block;margin-top:12px">
+<b>보고서 (다른 사람에게 보여주기)</b><br>
+<label><input type="checkbox" id="vv" style="width:auto;margin-right:6px">동영상도 포함 (파일이 매우 커짐)</label><br>
+<button onclick="report(false)">선택한 설비 보고서</button>
+<button style="background:#2e7d32" onclick="report(true)">전체 보고서</button>
+<div id="rs" style="margin-top:6px;font-size:.9em"></div>
+<small>파일 하나(.html)로 만들어집니다. 받은 사람은 폰이나 PC에서 열기만 하면 사진과 기록을 볼 수 있어요.</small>
+</div>
+<script>
+var RP="rec:",TT="공조 설비 일지";
+function he(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function b2u(b){return new Promise(function(res,rej){var f=new FileReader();f.onload=function(){res(f.result)};f.onerror=rej;f.readAsDataURL(b)})}
+function report(all){
+  if(!db){alert("저장소를 열 수 없습니다");return}
+  if(!all&&!eq){alert("분류와 설비를 먼저 선택하세요");return}
+  var vid=$("vv").checked;
+  $("rs").textContent="만드는 중...";
+  var q=db.transaction("media").objectStore("media").getAll();
+  q.onsuccess=function(){
+    var sel=q.result.filter(function(r){return all||r.eq==eq});
+    var m=sel.filter(function(r){return vid||r.type.indexOf("video")!==0}).sort(function(x,y){return x.id-y.id});
+    var nv=sel.filter(function(r){return r.type.indexOf("video")===0}).length;
+    var set={},tot=0;
+    m.forEach(function(r){set[r.eq]=1;tot+=r.blob.size});
+    if(all){for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k.indexOf(RP)===0)set[k.slice(RP.length)]=1}}
+    else set[eq]=1;
+    if(tot>80*1024*1024&&!confirm("용량이 큽니다(약 "+Math.round(tot/1048576)+"MB). 계속할까요?")){$("rs").textContent="";return}
+    Promise.all(m.map(function(r){return b2u(r.blob)})).then(function(urls){
+      var h='<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+he(TT)+'</title><style>body{font-family:sans-serif;max-width:720px;margin:0 auto;padding:12px;background:#f4f6f8}h1{font-size:1.3em}section{background:#fff;border-radius:8px;padding:12px;margin:12px 0}h2{font-size:1.1em;margin:0 0 6px}pre{white-space:pre-wrap;font-family:inherit;margin:6px 0}.g{display:flex;flex-wrap:wrap;gap:8px}.g div{width:48%}.g img,.g video{width:100%;border-radius:6px}.g small{display:block}</style></head><body><h1>'+he(TT)+' 보고서</h1><p>작성일 '+new Date().toISOString().slice(0,10)+'</p>';
+      Object.keys(set).sort().forEach(function(e){
+        h+='<section><h2>'+he(e)+'</h2>';
+        var sp=specOf(e);if(sp)h+='<b>스펙</b><pre>'+he(sp)+'</pre>';
+        var rc=ls(RP+e);
+        h+='<b>기록</b>';
+        h+=rc.length?rc.map(function(r){return '<pre>'+he(r.d+"\n증상: "+r.s+"\n대응: "+r.a)+'</pre>'}).join(""):'<pre>(기록 없음)</pre>';
+        var ph='';
+        m.forEach(function(r,i){
+          if(r.eq!=e)return;
+          var v=r.type.indexOf("video")===0;
+          ph+='<div>'+(v?'<video controls preload="metadata" src="'+urls[i]+'"></video>':'<img src="'+urls[i]+'">')+'<small>'+he(r.date+" "+r.cap)+'</small></div>';
+        });
+        h+='<b>사진·동영상</b><div class="g">'+(ph||'(없음)')+'</div></section>';
+      });
+      if(nv&&!vid)h+='<p>※ 동영상 '+nv+'개는 용량 때문에 이 보고서에 포함하지 않았습니다.</p>';
+      h+='</body></html>';
+      var a=document.createElement("a");
+      a.href=URL.createObjectURL(new Blob([h],{type:"text/html"}));
+      a.download=TT.replace(/ /g,"")+"_보고서_"+new Date().toISOString().slice(0,10)+".html";
+      document.body.appendChild(a);a.click();a.remove();
+      $("rs").textContent="완료: 사진·동영상 "+m.length+"개";
+    }).catch(function(){$("rs").textContent="실패: 용량이 너무 큽니다. 설비별로 만드세요."});
+  };
+}
+</script>
+</body></html>
