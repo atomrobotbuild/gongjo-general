@@ -333,4 +333,85 @@ function report(all){
   };
 }
 </script>
+  <div class="p" style="display:block;margin-top:12px">
+<b>불러오기 (백업 복원)</b><br>
+<button style="background:#6a1b9a" onclick="$('rf').click()">백업 zip 불러오기</button>
+<input type="file" id="rf" accept=".zip,application/zip" hidden onchange="restore(this)">
+<div id="rt" style="margin-top:6px;font-size:.9em"></div>
+<small>이 앱에서 만든 백업 zip 파일만 불러올 수 있어요. 이미 있는 사진·기록은 건너뜁니다.</small>
+</div>
+<script>
+async function readZip(buf){
+  var v=new DataView(buf),u=new Uint8Array(buf),n=u.length,p=-1;
+  for(var i=n-22;i>=Math.max(0,n-65557);i--){if(v.getUint32(i,true)===0x06054b50){p=i;break}}
+  if(p<0)throw new Error("zip");
+  var cnt=v.getUint16(p+10,true),off=v.getUint32(p+16,true),out=[],dec=new TextDecoder();
+  for(var k=0;k<cnt;k++){
+    var m=v.getUint16(off+10,true),cs=v.getUint32(off+20,true),nl=v.getUint16(off+28,true),el=v.getUint16(off+30,true),cm=v.getUint16(off+32,true),lo=v.getUint32(off+42,true);
+    var name=dec.decode(u.subarray(off+46,off+46+nl));
+    off+=46+nl+el+cm;
+    if(name.slice(-1)==="/")continue;
+    var ds=lo+30+v.getUint16(lo+26,true)+v.getUint16(lo+28,true),data=u.subarray(ds,ds+cs);
+    if(m===8){data=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer())}
+    else if(m!==0)continue;
+    out.push({name:name,data:data});
+  }
+  return out;
+}
+function restore(inp){
+  var f=inp.files[0];inp.value="";if(!f)return;
+  if(!db){alert("저장소를 열 수 없습니다");return}
+  var RPX=document.title.indexOf("전기")>=0?"erec:":"rec:";
+  $("rt").textContent="읽는 중...";
+  f.arrayBuffer().then(readZip).then(function(files){
+    var map={};
+    Object.keys(D).forEach(function(k){D[k].forEach(function(x){var e=k+" > "+x[0];map[pth(e)]=e})});
+    var TY={jpg:"image/jpeg",jpeg:"image/jpeg",png:"image/png",webp:"image/webp",gif:"image/gif",mp4:"video/mp4",mov:"video/quicktime",webm:"video/webm","3gpp":"video/3gpp"};
+    var q=db.transaction("media").objectStore("media").getAll();
+    q.onsuccess=function(){
+      var have={},add=[],dup=0,unk=0,recN=0;
+      q.result.forEach(function(r){have[r.eq+"|"+r.date+"|"+r.blob.size]=1});
+      files.forEach(function(fl){
+        var p=fl.name.split("/");if(p.length<3)return;
+        var e=map[p.slice(0,2).join("/")];
+        if(!e){unk++;return}
+        var fn=p.slice(2).join("/");
+        if(fn==="스펙.txt")return;
+        if(fn==="기록.txt"){
+          var t=new TextDecoder().decode(fl.data),cur=ls(RPX+e),seen={},ch=false;
+          cur.forEach(function(r){seen[r.d+"|"+r.s+"|"+r.a]=1});
+          t.split(/\n\n(?=[^\n]*\n증상: )/).forEach(function(s){
+            var m=s.match(/^([^\n]*)\n증상: ([\s\S]*?)\n대응: ([\s\S]*)$/);
+            if(!m)return;
+            var key=m[1]+"|"+m[2]+"|"+m[3];
+            if(seen[key])return;
+            seen[key]=1;cur.push({d:m[1],s:m[2],a:m[3]});recN++;ch=true;
+          });
+          if(ch){
+            cur.sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0});
+            try{localStorage.setItem(RPX+e,JSON.stringify(cur))}catch(x){}
+          }
+          return;
+        }
+        var m=fn.match(/^(\d{4}-\d{2}-\d{2})_\d+(?:_(.*))?\.([A-Za-z0-9]+)$/);
+        var ty=m&&TY[m[3].toLowerCase()];
+        if(!ty){unk++;return}
+        var b=new Blob([fl.data],{type:ty}),key=e+"|"+m[1]+"|"+b.size;
+        if(have[key]){dup++;return}
+        have[key]=1;
+        add.push({eq:e,cap:m[2]||"",date:m[1],blob:b,type:ty});
+      });
+      function done(){
+        $("rt").textContent="완료: 사진·동영상 "+add.length+"개, 기록 "+recN+"개 복원 (중복 "+dup+"개 건너뜀"+(unk?", 인식 못한 파일 "+unk+"개":"")+")";
+        media();recs();
+      }
+      if(!add.length){done();return}
+      var t=db.transaction("media","readwrite"),s=t.objectStore("media");
+      add.forEach(function(r){s.add(r)});
+      t.oncomplete=done;
+      t.onerror=function(){$("rt").textContent="저장 실패: 저장 공간이 부족할 수 있습니다"};
+    };
+  }).catch(function(){$("rt").textContent="실패: 이 앱에서 만든 백업 zip 파일이 아닙니다."});
+}
+</script>
 </body></html>
