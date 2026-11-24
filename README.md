@@ -4,7 +4,7 @@
 
 - 사이트: https://atomrobotbuild.github.io/gongjo-general/
 - 스마트폰 크롬에서 열고, 메뉴(⋮) → **홈 화면에 추가**를 해 두면 앱처럼 쓸 수 있습니다.
-
+![image](공조날짜.jpg)
 ## 주요 기능
 
 | 기능 | 설명 |
