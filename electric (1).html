@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>전기 설비 일지</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{--bg:#f4f6fa;--fg:#1b2333;--card:#fff;--ac:#1f3864;--ln:#d5dbe6}
+@media(prefers-color-scheme:dark){:root{--bg:#10151f;--fg:#e8ecf4;--card:#1a2232;--ac:#7aa2ff;--ln:#2d3850}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 Arial,"Malgun Gothic",sans-serif;background:var(--bg);color:var(--fg);padding-bottom:40px}
+header{background:var(--ac);color:#fff;padding:12px 14px;position:sticky;top:0;z-index:5}
+@media(prefers-color-scheme:dark){header{color:#10151f}}
+h1{margin:0;font-size:18px}#clk{font-size:14px;opacity:.9}
+main{padding:12px;max-width:760px;margin:auto}
+button,input,textarea{font:inherit}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{border:1px solid var(--ln);background:var(--card);color:var(--fg);padding:8px 12px;border-radius:20px}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+@media(prefers-color-scheme:dark){.chip.on{color:#10151f}}
+.row{display:block;width:100%;text-align:left;background:var(--card);color:var(--fg);border:1px solid var(--ln);border-radius:10px;padding:12px;margin:6px 0}
+.row small{display:block;opacity:.7}
+.box{background:var(--card);border:1px solid var(--ln);border-radius:10px;padding:12px;margin:8px 0}
+table{width:100%;border-collapse:collapse}td{border-bottom:1px solid var(--ln);padding:8px 4px;vertical-align:top}td:first-child{width:32%;opacity:.7}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:11px 14px;margin:4px 4px 4px 0}
+@media(prefers-color-scheme:dark){.btn{color:#10151f}}
+.btn.g{background:transparent;color:var(--fg);border:1px solid var(--ln)}
+input[type=text],textarea{width:100%;padding:10px;border:1px solid var(--ln);border-radius:8px;background:var(--bg);color:var(--fg);margin:4px 0 8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}
+.grid img,.grid video{width:100%;height:110px;object-fit:cover;border-radius:6px}
+.ok{color:#1a8f3c}.wn{color:#c27a00}.er{color:#d33}
+input[type=file]{display:none}
+</style></head><body>
+<header><h1>전기 설비 일지</h1><div id="clk"></div></header>
+<main id="app"></main>
+<script>
+const D=[{"c":"수변전","n":"한전 특고 인입","s":[["기호(TAG)","KEPCO"],["규격·용량","22.9kV 3Ø4W 60Hz / 22.9kV FR CNCO-W 60㎟-1/C"],["수량","1회선"],["설치 위치","전기실 SS/1"],["도면번호","EP-02, 03"]]},{"c":"수변전","n":"부하개폐기 LBS (전동식)","s":[["기호(TAG)","LBS"],["규격·용량","24kV 3P 630A, Motor Drive"],["수량","1"],["설치 위치","전기실 SS/1"],["도면번호","EP-02"]]},{"c":"수변전","n":"전력퓨즈 PF","s":[["기호(TAG)","3-PF"],["규격·용량","24kV 80A, 40kA"],["수량","1세트"],["설치 위치","전기실 SS/1"],["도면번호","EP-02"],["비고","금회 교체"]]},{"c":"수변전","n":"계기용 변성기 MOF","s":[["기호(TAG)","MOF"],["규격·용량","PT 13.2kV/110V, CT 100/5A (몰드)"],["수량","1"],["설치 위치","전기실 SS/1"],["도면번호","EP-02"],["비고","금회 교체"]]},{"c":"수변전","n":"피뢰기","s":[["기호(TAG)","3-LA"],["규격·용량","18kV 5kA (W/D.S)"],["수량","1세트"],["설치 위치","전기실 SS/1"],["도면번호","EP-02"]]},{"c":"수변전","n":"진공차단기 VCB","s":[["기호(TAG)","VCB"],["규격·용량","24kV 3P 630A 12.5kA"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","도면에 여러 개 표기, 개수 확인 필요"]]},{"c":"수변전","n":"몰드 변압기 TR#1","s":[["기호(TAG)","TR#1"],["규격·용량","750kVA, 22.9kV/380-220V 3Ø4W, %Z 6%, 표준소비효율"],["수량","1"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","일반 전등·전열용"]]},{"c":"수변전","n":"몰드 변압기 TR#2","s":[["기호(TAG)","TR#2"],["규격·용량","750kVA, 22.9kV/380-220V 3Ø4W, %Z 6%, 표준소비효율"],["수량","1"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","용도 도면 확인"]]},{"c":"수변전","n":"몰드 변압기 TR#3","s":[["기호(TAG)","TR#3"],["규격·용량","1,500kVA, 22.9kV/380-220V 3Ø4W, %Z 6%, 표준소비효율"],["수량","1"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","전산용"]]},{"c":"수변전","n":"저압 기중차단기 ACB","s":[["기호(TAG)","ACB"],["규격·용량","600V 4P 1,250AT 35kA (인출형)"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","TR#1·TR#2 2차, 발전기 등"]]},{"c":"수변전","n":"저압 기중차단기 ACB (TR#3용)","s":[["기호(TAG)","ACB"],["규격·용량","600V 4P 2,500AF/2,500AT, 65kA"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-02"]]},{"c":"수변전","n":"저압 기중차단기 ACB","s":[["기호(TAG)","ACB"],["규격·용량","600V 4P 800AT 35kA"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-02"]]},{"c":"수변전","n":"T.I.E ACB","s":[["기호(TAG)","T.I.E"],["규격·용량","600V 4P 1,250AT 35kA (W/Key Lock)"],["수량","1"],["설치 위치","전기실"],["도면번호","EP-02"]]},{"c":"수변전","n":"자동절환개폐기 ATS(CTTS)","s":[["기호(TAG)","ATS"],["규격·용량","4P 400A / 800A 600V"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","발전기 연계"]]},{"c":"수변전","n":"FR 버스덕트","s":[["기호(TAG)","BUS DUCT"],["규격·용량","AL+AL 3Ø4W 1,500A"],["수량","1식"],["설치 위치","전기실"],["도면번호","EP-02, 03"]]},{"c":"수변전","n":"정류기 & 배터리반","s":[["기호(TAG)","RECT"],["규격·용량","SILICON 30kVA 50A, 3Ø380V/110V"],["수량","1"],["설치 위치","전기실"],["도면번호","EP-02"]]},{"c":"수변전","n":"밀폐형 축전지","s":[["기호(TAG)","BATT"],["규격·용량","12V 250AH 10CELL (무보수)"],["수량","1세트"],["설치 위치","전기실"],["도면번호","EP-02"]]},{"c":"수변전","n":"자동역률제어기 APFC","s":[["기호(TAG)","APFC"],["규격·용량","자동역률제어"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","도면에 3군데 표기"]]},{"c":"수변전","n":"전력용 콘덴서 S.C","s":[["기호(TAG)","S.C"],["규격·용량","3Ø380V 10kVA(SR 0.6kVA) / 20kVA(SR 1.2kVA)"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-02"],["비고","대수 확인 필요"]]},{"c":"발전기","n":"디젤 발전기","s":[["기호(TAG)","GEN"],["규격·용량","550kW(비상) 3Ø4W 380/220V"],["수량","1"],["설치 위치","발전기실"],["도면번호","EP-02, 04"],["비고","기초 3,800×2,000×300"]]},{"c":"발전기","n":"발전기 제어반 GCP","s":[["기호(TAG)","GCP/1, 2"],["규격·용량","GCP 판넬 (계전기 포함)"],["수량","2"],["설치 위치","발전기실"],["도면번호","EP-03, 04"],["비고","발전기업체 공사분"]]},{"c":"발전기","n":"발전기 기동반","s":[["규격·용량",""],["수량","1"],["설치 위치","전기실"],["도면번호","EP-02, 03"]]},{"c":"발전기","n":"연료 서비스 탱크","s":[["규격·용량","990L, 500W×2,000L×1,000H"],["수량","1"],["설치 위치","발전기실"],["도면번호","EP-04"]]},{"c":"기계실","n":"MCC반","s":[["기호(TAG)","MCC-B1-N1~N4, E1, F1"],["규격·용량","옥내 자립형, 기초 W4,500×D900×H200"],["수량","6면"],["설치 위치","기계실"],["도면번호","EP-11~13"],["비고","소방용 MCC(F1)는 내진·적색도장"]]},{"c":"태양광","n":"태양전지 모듈","s":[["기호(TAG)","PV"],["규격·용량","460W, 2,163×1,030×35, 14직렬 15병렬"],["수량","210매"],["설치 위치","지붕(옥상)"],["도면번호","EP2-01, 09"],["비고","합계 96.6kW"]]},{"c":"태양광","n":"태양광 접속반","s":[["규격·용량","옥외자립형 710×300×1,300, MCCB 4P4D 250AF/200AT, 15군 입력"],["수량","1"],["설치 위치","지붕(옥상) PAD"],["도면번호","EP2-05, 06"]]},{"c":"태양광","n":"태양광 인버터","s":[["기호(TAG)","INV"],["규격·용량","100kW, MPPT 500~800Vdc, 최대 1,000Vdc, 98%↑, 180kg"],["수량","1"],["설치 위치","지붕(옥상) PAD"],["도면번호","EP2-07, 08"],["비고","AC MCCB 4P 200AT"]]},{"c":"태양광","n":"메인 컨트롤러/RTU/P채널 모듈","s":[["기호(TAG)","MCU20"],["규격·용량","최대 20CH, P채널 모듈 4CH×4EA"],["수량","1세트"],["설치 위치","접속반 내"],["도면번호","EP2-04, 06"]]},{"c":"태양광","n":"환경센서(일사량·모듈온도)","s":[["규격·용량","ESSM 130RS, TS-250N-FMU"],["수량","1세트"],["설치 위치","지붕(옥상)"],["도면번호","EP2-04, 06"]]},{"c":"태양광","n":"역전력계전기","s":[["규격·용량","역송전 방지(50kW 초과 시)"],["수량","1"],["설치 위치","전기실"],["도면번호","EP2-04"],["비고","전기공사업체 시공분"]]},{"c":"ESS","n":"배터리 랙","s":[["기호(TAG)","BATTERY RACK"],["규격·용량","100kWh/랙(700.8V, 143.5Ah, 16S1P), 575×715×1,916, 약 820kg"],["수량","3"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 07"],["비고","총 300kWh"]]},{"c":"ESS","n":"PCS","s":[["기호(TAG)","PCS"],["규격·용량","150kW, 800×750×1,800"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 04, 05"],["비고","효율 95%↑"]]},{"c":"ESS","n":"DC 분전반 DCP","s":[["기호(TAG)","DCP"],["규격·용량","600×675×1,974"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 07"]]},{"c":"ESS","n":"절연 변압기","s":[["기호(TAG)","절연T/R"],["규격·용량","200kVA, 1,300×750×1,250"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 03"]]},{"c":"ESS","n":"PMS","s":[["기호(TAG)","PMS"],["규격·용량","600×750×1,600"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 07"]]},{"c":"ESS","n":"UPS 5kVA","s":[["기호(TAG)","UPS"],["규격·용량","5kVA (소화설비, DCP 예비전원)"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 06"]]},{"c":"ESS","n":"UPS 1kVA","s":[["기호(TAG)","UPS"],["규격·용량","1kVA (PMS 예비전원)"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01"]]},{"c":"ESS","n":"ESS 분전반","s":[["기호(TAG)","LP-ESS"],["규격·용량","MCCB 4P 50AF/50AT 18kA"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 06"]]},{"c":"ESS","n":"항온항습기","s":[["규격·용량","실내기+실외기"],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01, 03"]]},{"c":"ESS","n":"캐비닛형 가스식 자동소화장치","s":[["규격·용량",""],["수량","1"],["설치 위치","ESS 외함"],["도면번호","EP4-01"],["비고","소방"]]},{"c":"ESS","n":"급·배기 휀(벽 매립형)","s":[["규격·용량",""],["수량","급1, 배1"],["설치 위치","ESS 외함"],["도면번호","EP4-01"]]},{"c":"ESS","n":"ESS 외함","s":[["규격·용량","외부 3,000×6,300×2,800 / 기초 3,600×6,500×500"],["수량","1"],["설치 위치","옥외"],["도면번호","EP4-01, 02"],["비고","기초는 건축공사분"]]},{"c":"UPS","n":"UPS","s":[["기호(TAG)","UPS"],["규격·용량","용량 도면 미표기, 배터리 ESP 12V 100AH 30CELLS"],["수량","1"],["설치 위치","확인"],["도면번호","EP5-01"],["비고","용량 확인 필요"]]},{"c":"전기차 충전","n":"완속 충전기","s":[["규격·용량","단상 220V 60Hz 7kW, 7인치 LCD, 500×400 PAD"],["수량","확인"],["설치 위치","주차장"],["도면번호","EP6-01"],["비고","수량 확인 필요"]]},{"c":"전기차 충전","n":"급속 충전기","s":[["규격·용량","3상 380~480V, 50kW(DC 최대 500V 120A), 12.1\" 터치"],["수량","확인"],["설치 위치","주차장"],["도면번호","EP6-02"],["비고","수량 확인 필요, 건축 시공분 볼라드 포함"]]},{"c":"자동제어","n":"전력자동제어 장치","s":[["기호(TAG)","EDDC, PDC, DDC, DM"],["규격·용량","전자화배전반(DM) 등"],["수량","확인"],["설치 위치","전기실"],["도면번호","EP-08~11"],["비고","DM 공급은 수배전반업체"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N1 공기조화기 급기","s":[["MCC반","MCC-B1-N1"],["기기번호","AHU/1"],["용량","7.5kW × 1대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N2 공기조화기 환기","s":[["MCC반","MCC-B1-N1"],["기기번호","AHU/1"],["용량","3.7kW × 1대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N3 동파방지히터 (3Ø4W)","s":[["MCC반","MCC-B1-N1"],["기기번호","AHU/1"],["용량","3kW × 1대 (예비 0)"],["기동·비고","전원만 공급"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N4 공기조화기 급기","s":[["MCC반","MCC-B1-N1"],["기기번호","AHU/2"],["용량","15kW × 1대 (예비 0)"],["기동·비고","Y-△"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N5 공기조화기 환기","s":[["MCC반","MCC-B1-N1"],["기기번호","AHU/2"],["용량","7.5kW × 1대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N6 동파방지히터 (3Ø4W)","s":[["MCC반","MCC-B1-N1"],["기기번호","AHU/2"],["용량","3kW × 1대 (예비 0)"],["기동·비고","전원만 공급"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N7 조경펌프","s":[["MCC반","MCC-B1-N1"],["기기번호","P/2"],["용량","2.2kW × 1대 (예비 0)"],["기동·비고","전원 공급"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N8 냉온수 순환펌프","s":[["MCC반","MCC-B1-N1"],["기기번호","P/3"],["용량","4kW × 3대 (예비 1)"],["기동·비고","직입, 1대 예비"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N9 급탕순환펌프","s":[["MCC반","MCC-B1-N1"],["기기번호","P/4"],["용량","2.2kW × 2대 (예비 1)"],["기동·비고","직입, 1대 예비"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N1 · N10 급탕순환펌프","s":[["MCC반","MCC-B1-N1"],["기기번호","P/5"],["용량","0.75kW × 2대 (예비 1)"],["기동·비고","직입, 1대 예비"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N2 · N11 지열히트펌프 (3Ø4W)","s":[["MCC반","MCC-B1-N2"],["기기번호","GSHP/1"],["용량","47.4kW × 2대 (예비 0)"],["기동·비고","전원 공급"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N3 · N12 지열히트펌프 (3Ø4W)","s":[["MCC반","MCC-B1-N3"],["기기번호","GSHP/1"],["용량","47.4kW × 2대 (예비 0)"],["기동·비고","전원 공급"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-N4 · N13 지열순환펌프","s":[["MCC반","MCC-B1-N4"],["기기번호","GP/1"],["용량","5.5kW × 5대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-E1 · E1 급수펌프","s":[["MCC반","MCC-B1-E1"],["기기번호","P/1"],["용량","3.7kW × 3대 (예비 0)"],["기동·비고","직입, 1SET 11.1kW"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-E1 · E2 집수정 배수펌프","s":[["MCC반","MCC-B1-E1"],["기기번호","P/7"],["용량","2.2kW × 2대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-E1 · E3 영구 배수펌프","s":[["MCC반","MCC-B1-E1"],["기기번호","P/9"],["용량","2.2kW × 2대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-E1 · E4 기계실 급기휀","s":[["MCC반","MCC-B1-E1"],["기기번호","OF/1"],["용량","2.2kW × 1대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-E1 · E5 기계실 배기휀","s":[["MCC반","MCC-B1-E1"],["기기번호","EF/1"],["용량","2.2kW × 1대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-F1 · F1 소방 주펌프","s":[["MCC반","MCC-B1-F1"],["기기번호","FP/1"],["용량","45kW × 1대 (예비 0)"],["기동·비고","Y-△"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-F1 · F2 소방 예비펌프","s":[["MCC반","MCC-B1-F1"],["기기번호","FP/1"],["용량","45kW × 1대 (예비 1)"],["기동·비고","Y-△, 예비"],["도면번호","EP-11~13"]]},{"c":"기계실 MCC 부하","n":"MCC-B1-F1 · F3 충압펌프","s":[["MCC반","MCC-B1-F1"],["기기번호","FP/2"],["용량","3.7kW × 1대 (예비 0)"],["기동·비고","직입"],["도면번호","EP-11~13"]]},{"c":"분전반(동력)","n":"MCC-B1-N1","s":[["구분","동력"],["전원(FROM)","SS/4"],["주차단기","4P 225/225"],["부하 용량","52.85kW"],["도면번호","EP-12"]]},{"c":"분전반(동력)","n":"MCC-B1-N2","s":[["구분","동력"],["전원(FROM)","SS/4"],["주차단기","4P 225/225"],["부하 용량","94.8kW"],["도면번호","EP-12"]]},{"c":"분전반(동력)","n":"MCC-B1-N3","s":[["구분","동력"],["전원(FROM)","SS/4"],["주차단기","4P 225/225"],["부하 용량","94.8kW"],["도면번호","EP-12"]]},{"c":"분전반(동력)","n":"MCC-B1-N4","s":[["구분","동력"],["전원(FROM)","SS/4"],["주차단기","4P 225/125"],["부하 용량","27.5kW"],["도면번호","EP-13"]]},{"c":"분전반(동력)","n":"MCC-B1-E1","s":[["구분","동력"],["전원(FROM)","SS/5"],["주차단기","4P 100/100"],["부하 용량","24.3kW"],["도면번호","EP-13"]]},{"c":"분전반(동력)","n":"MCC-B1-F1","s":[["구분","동력(소방)"],["전원(FROM)","SS/7"],["주차단기","4P 225/200"],["부하 용량","48.7kW"],["도면번호","EP-13"]]},{"c":"분전반(동력)","n":"PN-PH-AC1","s":[["구분","동력"],["전원(FROM)","SS/4"],["주차단기","4P 225/125"],["부하 용량","5.5kW"],["도면번호","EP-14"]]},{"c":"분전반(동력)","n":"PN-2-항온항습기1","s":[["구분","동력"],["전원(FROM)","SS/8"],["주차단기","4P 400/350"],["부하 용량","150.4kW"],["도면번호","EP-14"],["비고","37.6kW×4"]]},{"c":"분전반(동력)","n":"PN-2-항온항습기2","s":[["구분","동력"],["전원(FROM)","SS/8"],["주차단기","4P 400/250"],["부하 용량","112.8kW"],["도면번호","EP-14"],["비고","37.6kW×3"]]},{"c":"분전반(동력)","n":"PN-PH-1","s":[["구분","동력"],["전원(FROM)","SS/4"],["주차단기","4P 225/125"],["부하 용량","33.2kW"],["도면번호","EP-15"]]},{"c":"분전반(동력)","n":"PE-B1-1","s":[["구분","동력"],["전원(FROM)","SS/5"],["주차단기","4P 100/100"],["부하 용량","24.1kW"],["도면번호","EP-15"],["비고","배수·오수패키지 포함"]]},{"c":"분전반(동력)","n":"PE-B1-2","s":[["구분","동력"],["전원(FROM)","PE-B1-1"],["주차단기","4P 50/50"],["부하 용량","10.6kW"],["도면번호","EP-15"]]},{"c":"분전반(동력)","n":"PN-7-항온항습기1","s":[["구분","동력"],["전원(FROM)","SS/8"],["주차단기","4P 400/350"],["부하 용량","150.4kW"],["도면번호","EP-15A"],["비고","37.6kW×4"]]},{"c":"분전반(동력)","n":"PN-7-항온항습기2","s":[["구분","동력"],["전원(FROM)","SS/8"],["주차단기","4P 400/250"],["부하 용량","112.8kW"],["도면번호","EP-15A"],["비고","37.6kW×3"]]},{"c":"분전반(동력)","n":"PN-7-항온항습기3","s":[["구분","동력"],["전원(FROM)","SS/8"],["주차단기","4P 400/250"],["부하 용량","112.8kW"],["도면번호","EP-15A"],["비고","37.6kW×3"]]},{"c":"분전반(동력)","n":"LP-ESS","s":[["구분","동력(ESS)"],["전원(FROM)","SS-2"],["주차단기","4P 50AF/50AT, 18kA"],["도면번호","EP4-06"],["비고","ESS 외함 내부 분전반"]]},{"c":"분전반(조명·전열)","n":"LN-B1","s":[["구분","조명(일반)"],["전원(FROM)","SS/2"],["주차단기","4P 225AF/125AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LE-B1","s":[["구분","전열(비상)"],["전원(FROM)","LE-B1-전기실"],["주차단기","4P 50AF/40AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LN-1","s":[["구분","조명(일반)"],["전원(FROM)","LN-B1"],["주차단기","4P 100AF/75AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LE-1","s":[["구분","전열(비상)"],["전원(FROM)","SS/7"],["주차단기","4P 50AF/50AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LN-2","s":[["구분","조명(일반)"],["전원(FROM)","SS/2"],["주차단기","4P 225AF/175AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LE-2","s":[["구분","전열(비상)"],["전원(FROM)","LE-1"],["주차단기","4P 50AF/40AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LE-B1-전기실","s":[["구분","전열(비상)"],["전원(FROM)","SS/7"],["주차단기","4P 50AF/50AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LN-1-카페","s":[["구분","조명(일반)"],["전원(FROM)","LN-1"],["주차단기","4P 50AF/50AT"],["도면번호","EP-16"]]},{"c":"분전반(조명·전열)","n":"LE-3","s":[["구분","전열(비상)"],["전원(FROM)","LE-1"],["주차단기","4P 50AF/40AT"],["도면번호","EP-17"]]},{"c":"분전반(조명·전열)","n":"LN-3","s":[["구분","조명(일반)"],["전원(FROM)","SS/2"],["주차단기","4P 225AF/225AT"],["도면번호","EP-17"]]},{"c":"분전반(조명·전열)","n":"LE-4","s":[["구분","전열(비상)"],["전원(FROM)","LE-1"],["주차단기","4P 50AF/40AT"],["도면번호","EP-17"]]},{"c":"분전반(조명·전열)","n":"LN-4","s":[["구분","조명(일반)"],["전원(FROM)","SS/2"],["주차단기","4P 225AF/225AT"],["도면번호","EP-17"]]},{"c":"분전반(조명·전열)","n":"LE-5","s":[["구분","전열(비상)"],["전원(FROM)","SS/7"],["주차단기","4P 50AF/50AT"],["도면번호","EP-18"]]},{"c":"분전반(조명·전열)","n":"LN-5","s":[["구분","조명(일반)"],["전원(FROM)","SS/2"],["주차단기","4P 225AF/225AT"],["도면번호","EP-18"]]},{"c":"분전반(조명·전열)","n":"LE-6","s":[["구분","전열(비상)"],["전원(FROM)","LE-5"],["주차단기","4P 50AF/40AT"],["도면번호","EP-18"]]},{"c":"분전반(조명·전열)","n":"LN-6","s":[["구분","조명(일반)"],["전원(FROM)","SS/2"],["주차단기","4P 225AF/225AT"],["도면번호","EP-18"]]}];
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const K=i=>i.c+'|'+i.n,CATS=[...new Set(D.map(i=>i.c))];
+let cat=CATS[0],cur=null,tab='spec',q='',st='양호';
+let REC={};try{REC=JSON.parse(localStorage.getItem('erec')||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem('erec',JSON.stringify(REC))}catch(e){alert('저장 공간이 부족합니다')}};
+const now=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())};
+setInterval(()=>$('#clk').textContent=new Date().toLocaleString('ko-KR',{dateStyle:'full',timeStyle:'medium'}),1000);
+let db;
+const open=()=>new Promise(r=>{const o=indexedDB.open('elec',1);o.onupgradeneeded=()=>o.result.createObjectStore('m',{keyPath:'id',autoIncrement:true});o.onsuccess=()=>{db=o.result;r()};o.onerror=()=>r()});
+const st_=m=>db.transaction('m',m).objectStore('m');
+const req=r=>new Promise(res=>{r.onsuccess=()=>res(r.result);r.onerror=()=>res()});
+const mAll=()=>db?req(st_('readonly').getAll()):Promise.resolve([]);
+const mAdd=o=>req(st_('readwrite').add(o)),mDel=id=>req(st_('readwrite').delete(id));
+const safe=s=>s.replace(/[\\\/:*?"<>|]/g,'_');
+const ext=t=>t.startsWith('video')?'mp4':(t.split('/')[1]||'jpg').replace('jpeg','jpg');
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
+
+function home(){
+  cur=null;
+  const list=D.filter(i=>q?(i.n+i.c+JSON.stringify(i.s)).includes(q):i.c===cat);
+  $('#app').innerHTML=`<input type="text" id="q" placeholder="설비 검색 (이름·TAG·도면번호)" value="${esc(q)}">
+  <div class="chips">${CATS.map(c=>`<button class="chip ${c===cat&&!q?'on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+  ${list.map(i=>`<button class="row" data-k="${esc(K(i))}"><b>${esc(i.n)}</b><small>${esc(i.c)} · 기록 ${(REC[K(i)]||[]).length}건</small></button>`).join('')||'<p>결과 없음</p>'}
+  <div class="box"><b>백업 · 보고서</b><br>
+  <button class="btn" id="bk">백업 내보내기(zip)</button><button class="btn g" id="rp">보고서(HTML)</button>
+  <button class="btn g" id="im">불러오기(zip)</button><input type="file" id="imf" accept=".zip"></div>`;
+  $('#q').oninput=e=>{q=e.target.value;const p=e.target.selectionStart;home();const n=$('#q');n.focus();n.setSelectionRange(p,p)};
+  document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{cat=b.dataset.c;q='';home()});
+  document.querySelectorAll('.row').forEach(b=>b.onclick=()=>{cur=D.find(i=>K(i)===b.dataset.k);tab='spec';detail()});
+  $('#bk').onclick=backup;$('#rp').onclick=report;$('#im').onclick=()=>$('#imf').click();$('#imf').onchange=e=>restore(e.target.files[0]);
+}
+async function detail(){
+  const k=K(cur);
+  let h=`<button class="btn g" id="bk0">← 목록</button><h2 style="margin:6px 0">${esc(cur.n)}</h2><small>${esc(cur.c)}</small>
+  <div class="chips">${[['spec','스펙'],['media','사진·영상'],['log','일지']].map(t=>`<button class="chip ${tab===t[0]?'on':''}" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>`;
+  if(tab==='spec')h+=`<div class="box"><table>${cur.s.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table></div>`;
+  if(tab==='media'){
+    const ms=(await mAll()).filter(m=>m.k===k).sort((a,b)=>b.ts-a.ts);
+    h+=`<button class="btn" id="cam">📷 촬영</button><button class="btn g" id="alb">🖼 앨범</button>
+    <input type="file" id="f1" accept="image/*,video/*" capture="environment"><input type="file" id="f2" accept="image/*,video/*" multiple>
+    <div class="grid" style="margin-top:8px">${ms.map(m=>`<div><${m.type.startsWith('video')?'video controls':'img'} src="${URL.createObjectURL(m.blob)}"></${m.type.startsWith('video')?'video':'img'}><small>${new Date(m.ts).toLocaleString('ko-KR')}</small><br><button class="btn g" data-d="${m.id}">삭제</button></div>`).join('')}</div>`;
+  }
+  if(tab==='log'){
+    h+=`<div class="box"><b>일지 작성</b> <small>${now()}</small><br>점검자<input type="text" id="who" value="${esc(localStorage.getItem('ewho')||'')}">
+    상태<div class="chips">${['양호','주의','이상'].map(s=>`<button class="chip ${st===s?'on':''}" data-s="${s}">${s}</button>`).join('')}</div>
+    운전상태·지시값<input type="text" id="val" placeholder="예: 전압 380V, 전류 12A">
+    관찰·조치 내용<textarea id="memo" rows="3"></textarea><button class="btn" id="sv">저장</button></div>
+    ${(REC[k]||[]).map((r,n)=>`<div class="box"><b>${esc(r.t)}</b> · ${esc(r.w||'-')} · <b class="${{양호:'ok',주의:'wn',이상:'er'}[r.s]}">${r.s}</b><br>${esc(r.v||'')}<br>${esc(r.m||'').replace(/\n/g,'<br>')}<br><button class="btn g" data-r="${n}">삭제</button></div>`).join('')}`;
+  }
+  $('#app').innerHTML=h;$('#bk0').onclick=home;
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;detail()});
+  if(tab==='media'){
+    $('#cam').onclick=()=>$('#f1').click();$('#alb').onclick=()=>$('#f2').click();
+    const up=async fs=>{for(const f of fs)await mAdd({k,type:f.type||'image/jpeg',ts:Date.now(),blob:f});detail()};
+    $('#f1').onchange=e=>up(e.target.files);$('#f2').onchange=e=>up(e.target.files);
+    document.querySelectorAll('[data-d]').forEach(b=>b.onclick=async()=>{if(confirm('삭제할까요?')){await mDel(+b.dataset.d);detail()}});
+  }
+  if(tab==='log'){
+    document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{st=b.dataset.s;document.querySelectorAll('[data-s]').forEach(x=>x.classList.toggle('on',x===b))});
+    $('#sv').onclick=()=>{const w=$('#who').value;localStorage.setItem('ewho',w);(REC[k]=REC[k]||[]).unshift({t:now(),w,s:st,v:$('#val').value,m:$('#memo').value});save();detail()};
+    document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{if(confirm('삭제할까요?')){REC[k].splice(+b.dataset.r,1);save();detail()}});
+  }
+}
+async function backup(){
+  if(!window.JSZip)return alert('zip 라이브러리를 불러오지 못했습니다(인터넷 확인)');
+  const z=new JSZip(),ms=await mAll(),meta=[];
+  z.file('records.json',JSON.stringify(REC));
+  for(const m of ms){const [c,n]=m.k.split('|'),p=`${safe(c)}/${safe(n)}/${m.id}.${ext(m.type)}`;z.file(p,m.blob);meta.push({p,k:m.k,type:m.type,ts:m.ts})}
+  z.file('media.json',JSON.stringify(meta));
+  dl(await z.generateAsync({type:'blob'}),'전기설비일지_'+now().slice(0,10)+'.zip');
+}
+async function restore(f){
+  if(!f)return;const z=await JSZip.loadAsync(f);
+  const r=z.file('records.json');if(r){const o=JSON.parse(await r.async('string'));for(const k in o)REC[k]=[...(REC[k]||[]),...o[k].filter(x=>!(REC[k]||[]).some(y=>y.t===x.t&&y.m===x.m))];save()}
+  const mj=z.file('media.json');if(mj)for(const m of JSON.parse(await mj.async('string'))){const b=await z.file(m.p).async('blob');await mAdd({k:m.k,type:m.type,ts:m.ts,blob:new Blob([b],{type:m.type})})}
+  alert('불러오기 완료');home();
+}
+async function report(){
+  const ms=await mAll(),rd=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+  let h='<meta charset="utf-8"><title>전기 설비 일지 보고서</title><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto"><h1>전기 설비 일지 보고서</h1><p>'+now()+'</p>';
+  for(const i of D){const k=K(i),rs=REC[k]||[],mm=ms.filter(m=>m.k===k);if(!rs.length&&!mm.length)continue;
+    h+=`<h2>${esc(i.n)} <small>(${esc(i.c)})</small></h2><table border=1 cellpadding=4 style="border-collapse:collapse">${i.s.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</table>`;
+    h+=rs.map(r=>`<p><b>${esc(r.t)}</b> ${esc(r.w||'')} [${r.s}] ${esc(r.v||'')}<br>${esc(r.m||'')}</p>`).join('');
+    for(const m of mm)h+=m.type.startsWith('video')?'<p>(동영상은 백업 zip에 있음)</p>':`<img src="${await rd(m.blob)}" style="width:240px;margin:4px">`}
+  dl(new Blob([h],{type:'text/html'}),'전기설비일지_보고서.html');
+}
+open().then(home);
+</script></body></html>
